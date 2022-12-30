@@ -12,19 +12,32 @@ const getAllValidations = async (req, res = response) => {
 const saveInformation = async (req = request, res = response) => {
   // const body = req.body;
   const { params, query, body } = req;
-
-  await body.forEach(async (item) => {
-    const result = await pool.query("INSERT INTO validador_correos SET ?", {
-      lote: item.lote,
-      correo: item.correo,
+  const { data, firstCol, secondCol } = body;
+  let errorStatus = false;
+  await data.forEach(async (item) => {
+    try {
+      await pool.query("INSERT INTO validador_correos SET ?", {
+        [firstCol]: item[firstCol],
+        [secondCol]: item[secondCol],
+      });
+    } catch (error) {
+      console.log("entro aqui");
+      if (error) {
+        errorStatus = true;
+      }
+    }
+  });
+  if (!errorStatus) {
+    res.json({
+      message: "POST request",
+      status: 201,
     });
-  });
-
-  return res.json({
-    message: "POST request :d welcome",
-    status: 201,
-    body,
-  });
+  } else {
+    res.json({
+      message: "POST request",
+      status: 400,
+    });
+  }
 };
 
 module.exports = {
