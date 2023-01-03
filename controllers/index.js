@@ -5,7 +5,7 @@ const getAllValidations = async (req, res = response) => {
   const result = await pool.query("SELECT 2 + 2");
 
   res.json({
-    message: "all oki :D",
+    message: "all oki",
   });
 };
 
