@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const bodyParser = require("body-parser");
 
 class Server {
   constructor() {
@@ -13,8 +14,17 @@ class Server {
   }
 
   middlewares() {
-    this.app.use(cors());
-    this.app.use(express.json());
+    this.app.use(cors({ origin: true, credentials: true }));
+    this.app.use(express.json({ limit: "25mb" }));
+    this.app.use(express.urlencoded({ limit: "25mb" }));
+    this.app.use(bodyParser.json({ limit: "25mb" }));
+    this.app.use(
+      bodyParser.urlencoded({
+        limit: "25mb",
+        extended: true,
+        parameterLimit: 25000,
+      })
+    );
   }
 
   // connectDB() {
