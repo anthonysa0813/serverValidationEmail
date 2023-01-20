@@ -35,9 +35,10 @@ class Server {
     this.app.use(this.paths.validation, require("../routes/validation.route"));
   }
   listen() {
-    this.app.listen(this.PORT, () => {
+    const server = this.app.listen(this.PORT, () => {
       console.log(`the application listening on ${this.PORT}`);
     });
+    server.timeout = 1000;
   }
 }
 

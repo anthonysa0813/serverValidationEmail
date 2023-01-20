@@ -1,6 +1,8 @@
+const { Worker } = require("worker_threads");
 const { request, response } = require("express");
 const pool = require("../config/database");
 const validateEmailFunction = require("../helpers/validateEmail");
+const fetch = require("node-fetch");
 
 const getAllValidations = async (req, res = response) => {
   const result = await pool.query("SELECT 2 + 2");
@@ -11,31 +13,45 @@ const getAllValidations = async (req, res = response) => {
 };
 
 const saveInformation = async (req = request, res = response) => {
-  // const body = req.body;
   const { params, query, body } = req;
   const { data, firstCol, secondCol } = body;
-
+  let i = 0;
+  const maxRequests = 10000;
+  const delay = 800; // 2 seconds
   try {
-    const newData = data.map(async (d) => {
-      const isValid = await validateEmailFunction(d.correo);
-      return {
-        correo: d.correo,
-        lote: d.lote,
-        estado: isValid,
-      };
-    });
-    await Promise.all(newData).then((values) => {
-      values.forEach(async (value) => {
-        await pool.query("INSERT INTO validador_correos SET ?", {
-          [firstCol]: value.lote,
-          [secondCol]: value.correo,
-          estado: value.estado,
+    const makeRequest = async (correo, user) => {
+      // Check if the maximum number of requests has been reached
+      if (i >= maxRequests) {
+        return res.json({
+          message: "POST request",
+          status: 201,
         });
-      });
-    });
-    return res.json({
-      message: "POST request",
-      status: 201,
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `http://172.25.120.14/query_mail/index.php?mail=${correo}`
+        );
+        const dataRes = await response.text();
+        await pool.query("INSERT INTO validador_correos SET ?", {
+          lote: user.lote,
+          correo: user.correo,
+          estado: dataRes,
+        });
+      } catch (error) {
+        console.log(error);
+      }
+
+      i++;
+
+      // Wait for the delay before making the next request
+      setTimeout(makeRequest, delay);
+    };
+
+    data.forEach(async (value) => {
+      // console.log(value.correo);
+      await makeRequest(value.correo, value);
     });
   } catch (error) {
     console.log("==============================");
